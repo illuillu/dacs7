@@ -6,15 +6,16 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Dacs7Cmd
 {
     public class Program
     {
-        private static readonly Dacs7Client _client = new Dacs7Client(new LoggerFactory().AddConsole());
-        //private const string Ip = "192.168.0.146";
-        private const string Ip = "127.0.0.1";
-        private const string ConnectionString = "Data Source=" + Ip + ":102,0,2"; //"Data Source=192.168.0.145:102,0,2";
+        private static readonly Dacs7Client _client = new Dacs7Client(new LoggerFactory().AddConsole(LogLevel.Debug));
+        private const string Ip = "192.168.0.148";
+        //private const string Ip = "127.0.0.1";
+        private const string ConnectionString = "Data Source=" + Ip + ":102,0,2;Maximum Parallel Calls=1;Maximum Parallel Jobs=7"; //"Data Source=192.168.0.145:102,0,2";
         private const int TestDbNr = 250;
         private const int TestByteOffset = 524;
         private const int TestByteOffset2 = 525;
@@ -31,24 +32,26 @@ namespace Dacs7Cmd
         {
             _client.OnConnectionChange += _client_OnConnectionChange;
             _client.Connect(ConnectionString);
+ 
 
-            GenericsSample();
-            MultiValuesSample();
+            ReadWriteAnyAsyncTest().ConfigureAwait(false).GetAwaiter().GetResult();
+            //GenericsSample();
+            //MultiValuesSample();
 
-            var red = _client.ReadAny(PlcArea.DB, 0, typeof(int), new[] { 2, LongDbNumer });
-            var boolValue = _client.ReadAny<bool>(LongDbNumer, 0, 2);
-
-
-            _client.WriteAny(LongDbNumer, 0, new bool[] { true, true });
-
-
-            var intValue = _client.ReadAny<int>(LongDbNumer, 0,2);
-            _client.WriteAny(LongDbNumer, 0, new int[] { 1, 2 });
+            //var red = _client.ReadAny(PlcArea.DB, 0, typeof(int), new[] { 2, LongDbNumer });
+            //var boolValue = _client.ReadAny<bool>(LongDbNumer, 0, 2);
 
 
-            ReadWriteAnyTest();
-            ReadWriteMoreThanOnePduTest();
-            ReadWriteMoreThanOnePduParallelTest();
+            //_client.WriteAny(LongDbNumer, 0, new bool[] { true, true });
+
+
+            //var intValue = _client.ReadAny<int>(LongDbNumer, 0,2);
+            //_client.WriteAny(LongDbNumer, 0, new int[] { 1, 2 });
+
+
+            //ReadWriteAnyTest();
+            //ReadWriteMoreThanOnePduTest();
+            //ReadWriteMoreThanOnePduParallelTest();
 
 
 
@@ -245,5 +248,24 @@ namespace Dacs7Cmd
             //client.Disconnect();
             //Assert.AreEqual(true, !_client.IsConnected);
         }
+
+        public static async Task ReadWriteAnyAsyncTest()
+        {
+            try
+            {
+
+                for (int i = 0; i < 100; i++)
+                {
+                    var bytes = await _client.ReadAnyAsync(PlcArea.DB, 0, typeof(byte), new int[] { 6534, 3 }) as byte[];
+                }
+
+            }
+            catch(Exception ex)
+            {
+
+            }
+        }
+
+
     }
 }

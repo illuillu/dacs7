@@ -1112,7 +1112,8 @@ namespace Dacs7
 
         internal CallbackHandler GetCallbackHandler(ushort id, bool withoutEvent = false)
         {
-            Interlocked.Increment(ref _currentNumberOfPendingCalls);
+            var current = Interlocked.Increment(ref _currentNumberOfPendingCalls);
+            _logger?.LogDebug("Number of pending calls {0}", current);
             AutoResetEvent arEvent = null;
             if (!withoutEvent)
             {
@@ -1194,7 +1195,7 @@ namespace Dacs7
                     try
                     {
                         _eventQueue.Enqueue(cbh.Event);
-                        _logger?.LogDebug($"Number of queued events {_eventQueue.Count}");
+                        _logger?.LogDebug("Number of queued events {0}", _eventQueue.Count);
                     }
                     finally
                     {
@@ -1204,7 +1205,8 @@ namespace Dacs7
             }
             finally
             {
-                Interlocked.Decrement(ref _currentNumberOfPendingCalls);
+                var current = Interlocked.Decrement(ref _currentNumberOfPendingCalls);
+                _logger?.LogDebug("Number of pending calls {0}", current);
             }
 
         }
