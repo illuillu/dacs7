@@ -256,7 +256,7 @@ namespace Dacs7Cmd
 
                 for (int i = 0; i < 100; i++)
                 {
-                    var bytes = await _client.ReadAnyAsync(PlcArea.DB, 0, typeof(byte), new int[] { 6534, 3 }) as byte[];
+                    var bytes = (await _client.ReadAnyAsync(PlcArea.DB, 0, typeof(byte), new int[] { 6534, 3 }).ConfigureAwait(false)) as byte[];
                 }
 
             }

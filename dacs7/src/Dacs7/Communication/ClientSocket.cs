@@ -85,7 +85,7 @@ namespace Dacs7.Communication
             {
                 PublishConnectionStateChanged(true);
                 StartReceive();
-            }, TaskCreationOptions.LongRunning);
+            }, TaskCreationOptions.LongRunning).ConfigureAwait(false);
         }
         #endregion
 
@@ -104,7 +104,7 @@ namespace Dacs7.Communication
                 {
                     if (!_configuration.KeepAlive)
                         _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
-                    var ignore = Task.Factory.StartNew(() => StartReceive(), TaskCreationOptions.LongRunning);
+                    Task.Factory.StartNew(() => StartReceive(), TaskCreationOptions.LongRunning).ConfigureAwait(false);
                     PublishConnectionStateChanged(true);
                 }
                 else
@@ -120,7 +120,7 @@ namespace Dacs7.Communication
         public override async Task<SocketError> Send(IEnumerable<byte> data)
         {
             LastUsage = DateTime.Now;
-            var result = await SendInternal(data);
+            var result = await SendInternal(data).ConfigureAwait(false);
             PublishSendFinished();
             return result;
         }
@@ -146,7 +146,7 @@ namespace Dacs7.Communication
                 while (true)
                 {
                     var buffer = new ArraySegment<byte>(receiveBuffer);
-                    var received = await _socket.ReceiveAsync(buffer, SocketFlags.Partial);
+                    var received = await _socket.ReceiveAsync(buffer, SocketFlags.Partial).ConfigureAwait(false);
                     if (received == 0)
                         return;
                     LastUsage = DateTime.Now;
@@ -174,7 +174,7 @@ namespace Dacs7.Communication
             // Write the locally buffered data to the network.
             try
             {
-                var result = await _socket.SendAsync(new ArraySegment<byte>(data.ToArray()), SocketFlags.None);
+                var result = await _socket.SendAsync(new ArraySegment<byte>(data.ToArray()), SocketFlags.None).ConfigureAwait(false);
             }
             catch (Exception)
             {

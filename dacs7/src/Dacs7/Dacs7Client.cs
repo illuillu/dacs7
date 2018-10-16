@@ -377,7 +377,7 @@ namespace Dacs7
 
             var oringinOffset = offset;
             SetupGenericReadData<T>(ref offset,out Type readType, out int bytesToRead);
-            var data = await ReadAnyAsync(PlcArea.DB, oringinOffset, readType, new[] { bytesToRead, dbNumber });
+            var data = await ReadAnyAsync(PlcArea.DB, oringinOffset, readType, new[] { bytesToRead, dbNumber }).ConfigureAwait(false);
 
             return data != null && data.Any() ? (T)data.ConvertTo<T>() : default(T);
         }
@@ -419,7 +419,7 @@ namespace Dacs7
                 throw new Dacs7NotConnectedException();
 
             SetupGenericReadData<T>(ref offset, out Type readType, out int bytesToRead, out int elementLength, out int bitOffset, out Type t, out bool isBool, out bool isString, numberOfItems);
-            var data = await ReadAnyAsync(PlcArea.DB, offset, readType, new[] { bytesToRead, dbNumber });
+            var data = await ReadAnyAsync(PlcArea.DB, offset, readType, new[] { bytesToRead, dbNumber }).ConfigureAwait(false);
 
             return ConvertToEnumerable<T>(numberOfItems, t, isBool, isString, elementLength, bitOffset, bytesToRead, data);
         }
@@ -689,9 +689,9 @@ namespace Dacs7
             if (elementType == typeof(bool))
             {
                 //with bool's we have to create a multi write request
-                await WriteAnyAsync((value as IEnumerable<bool>).Select((element, i) => WriteOperationParameter.Create(dbNumber, offset + i, element)));
+                await WriteAnyAsync((value as IEnumerable<bool>).Select((element, i) => WriteOperationParameter.Create(dbNumber, offset + i, element))).ConfigureAwait(false);
             }
-            await WriteAnyAsync(PlcArea.DB, offset, value, new[] { size, dbNumber });
+            await WriteAnyAsync(PlcArea.DB, offset, value, new[] { size, dbNumber }).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -734,10 +734,10 @@ namespace Dacs7
                 await Task.Factory.StartNew(() =>
                 {
                     WriteAny(area, offset, value, args);
-                }, _taskCreationOptions);
+                }, _taskCreationOptions).ConfigureAwait(false);
             }
             else
-                await WriteAnyPartsAsync(area, offset, value, args);
+                await WriteAnyPartsAsync(area, offset, value, args).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -777,10 +777,7 @@ namespace Dacs7
         /// Write multiple variables async with one call to the PLC.
         /// </summary>
         /// <param name="parameters">A list of <see cref="WriteOperationParameter"/>, so multiple write requests can be handled in one message</param>
-        public Task WriteAnyAsync(IEnumerable<WriteOperationParameter> parameters)
-        {
-            return Task.Factory.StartNew(() => WriteAny(parameters), _taskCreationOptions);
-        }
+        public Task WriteAnyAsync(IEnumerable<WriteOperationParameter> parameters) =>  Task.Factory.StartNew(() => WriteAny(parameters), _taskCreationOptions);
 
 
 
@@ -793,7 +790,7 @@ namespace Dacs7
             EventHandler?.Invoke(this, new PlcConnectionNotificationEventArgs(socketHandle, connected));
             _logger?.LogInformation($"OnClientStateChanged to {(connected ? "connected" : "disconnected")}.");
             if (connected)
-                Task.Factory.StartNew(() => ConfigurePlcConnection());
+                Task.Factory.StartNew(() => ConfigurePlcConnection()).ConfigureAwait(false);
         }
 
 
@@ -1228,7 +1225,7 @@ namespace Dacs7
             {
                 foreach (var data in policy.TranslateToRawMessage(msg))
                 {
-                    await Send(data);
+                    await Send(data).ConfigureAwait(false);
                 }
             }
             catch(Exception)
@@ -1248,7 +1245,7 @@ namespace Dacs7
                     _logger?.LogError(errorMsg);
                     throw new InvalidOperationException(errorMsg);
                 }
-                var ret = await _clientSocket.Send(sendData);
+                var ret = await _clientSocket.Send(sendData).ConfigureAwait(false);
                 if (ret != SocketError.Success)
                     throw new SocketException((int)ret);
             }
@@ -1294,7 +1291,7 @@ namespace Dacs7
                     }, _taskCreationOptions));
                 });
 
-                await Task.WhenAll(requests.ToArray());
+                await Task.WhenAll(requests.ToArray()).ConfigureAwait(false);
 
                 return requests.SelectMany(request => request.Result as byte[] ?? throw new InvalidDataException("Returned data are null")).ToArray();
             }
@@ -1332,7 +1329,7 @@ namespace Dacs7
                     }));
                 }
 
-                await Task.WhenAll(requests);
+                await Task.WhenAll(requests).ConfigureAwait(false);
             }
             catch (AggregateException exception)
             {
