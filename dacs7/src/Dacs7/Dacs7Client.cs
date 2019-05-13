@@ -787,10 +787,36 @@ namespace Dacs7
 
         private void OnClientStateChanged(string socketHandle, bool connected)
         {
-            EventHandler?.Invoke(this, new PlcConnectionNotificationEventArgs(socketHandle, connected));
-            _logger?.LogInformation($"OnClientStateChanged to {(connected ? "connected" : "disconnected")}.");
-            if (connected)
-                Task.Factory.StartNew(() => ConfigurePlcConnection()).ConfigureAwait(false);
+            try
+            {
+                EventHandler?.Invoke(this, new PlcConnectionNotificationEventArgs(socketHandle, connected));
+                _logger?.LogInformation($"OnClientStateChanged to {(connected ? "connected" : "disconnected")}.");
+                if (connected)
+                {
+                    Task.Factory.StartNew(() => ConfigurePlcConnection()).ConfigureAwait(false);
+                }
+                else
+                {
+                    List<CallbackHandler> snapshot;
+                    _callbackLockSlim.EnterReadLock();
+                    try
+                    {
+                        snapshot = _callbacks.Values.ToList();
+                    }
+                    finally
+                    {
+                        _callbackLockSlim.ExitReadLock();
+                    }
+
+
+                    foreach (var cb in snapshot)
+                    {
+                        if (cb.Event != null) cb.Event.Set();
+                        else cb.OnCallbackAction?.Invoke(null);
+                    }
+                }
+            }
+            catch (Exception) { }
         }
 
 

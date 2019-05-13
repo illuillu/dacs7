@@ -112,7 +112,7 @@ namespace Dacs7.Communication
         protected void HandleSocketDown()
         {
             PublishConnectionStateChanged(false);
-            if (_shutdown && _configuration.Autoconnect)
+            if (!_shutdown && _configuration.Autoconnect)
                 CyclicExecutor.Instance.Enabled(CycleId, true);
         }
 

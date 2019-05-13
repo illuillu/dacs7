@@ -32,7 +32,10 @@ namespace Dacs7Cmd
         {
             _client.OnConnectionChange += _client_OnConnectionChange;
             _client.Connect(ConnectionString);
- 
+
+
+
+            Thread.Sleep(10000);
 
             ReadWriteAnyAsyncTest().ConfigureAwait(false).GetAwaiter().GetResult();
             //GenericsSample();
